@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import (AbstractBaseUser,PermissionsMixin,BaseUserManager)
-
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # Create your models here.
 class UserManager(BaseUserManager):
     def create_user(self,email,password,**extra_fields):
@@ -47,3 +47,20 @@ class User(AbstractBaseUser,PermissionsMixin):
     
     def __str__(self):
         return self.email
+    
+class Profile(models.Model):
+    user = models.ForeignKey(User,on_delete=models.CASCADE,null=True)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
+    image = models.ImageField(blank=True,null=True)
+    describtions = models.TextField(max_length=250)
+    created_date = models.DateTimeField(auto_now_add=True,null=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.user.email
+    
+@receiver(post_save,sender=User)
+def create_user_profile(sender,instance,created,**kwargs):
+    if created:
+        Profile.objects.create(user=instance)
